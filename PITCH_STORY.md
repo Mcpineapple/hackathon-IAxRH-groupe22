@@ -69,7 +69,7 @@
 **[ACTION: Show main dashboard with employee list and risk scores]**
 
 **Scene 2: The Prediction**
-> "Let's look at one employee. Sarah. High performer. But our AI says: 'At risk.'"
+> "Let's look at one employee. Sarah. High performer. But our system flags her as 'at risk.' 'At risk.'"
 
 **[ACTION: Click on Sarah's profile]**
 
@@ -85,18 +85,15 @@
 **Scene 4: The Action**
 > "Now HR can actually do something. A conversation. A promotion. A workload review. This isn't about firing people—it's about saving them."
 
-**[ACTION: Show recommended actions panel]**
 
 **Scene 5: Privacy & Fairness**
-> "Every prediction shows this badge: 'Privacy Protected' and 'Fairness Verified.' Trust is built in."
+> "And every single prediction shows this badge: 'Privacy Protected' and 'Fairness Verified.' Trust is built in."
 
 **[ACTION: Show badges on the interface]**
 
 ---
 
 ## 🏁 CLOSING: The Impact
-
-**Slide suggestion:** Large final statement with company vision
 
 ### The Close:
 
@@ -126,11 +123,11 @@
 
 ## 🎨 SUGGESTED VISUALS SUMMARY
 
-1. **Opening:** Single statistic, dark background, white text (impact)
-2. **Conflict:** Split comparison (problem vs. solution)
-3. **Solution:** Three pillars graphic (brain + lock + scale)
-4. **Demo:** Clean dashboard screenshot with annotations
-5. **Close:** Bold statement with logo and tagline
+1. *Opening:* Single statistic, dark background, white text (impact)
+2. *Conflict:* Split comparison (problem vs. solution)
+3. *Solution:* Three pillars graphic (brain + lock + scale)
+4. *Demo:* Clean dashboard screenshot with annotations
+5. *Close:* Bold statement with logo and tagline
 
 ---
 
@@ -143,5 +140,3 @@
 - "We're not replacing HR—we're empowering them"
 
 ---
-
-*Remember: You're not selling technology. You're selling peace of mind for HR professionals who want to do right by their people.*
