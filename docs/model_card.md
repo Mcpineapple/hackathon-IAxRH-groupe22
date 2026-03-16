@@ -1,343 +1,158 @@
-# Model Card - HR Turnover Prediction Model
+# Model Card — RetainAI Turnover Predictor
 
-## RetainAI - Machine Learning Model Documentation
-
----
-
-## 1. Model Overview
-
-| Attribute | Value |
-|-----------|-------|
-| **Model Name** | RetainAI Turnover Predictor |
-| **Model Type** | Random Forest Classifier |
-| **Version** | 1.0 |
-| **Framework** | scikit-learn |
-| **Created** | March 2026 |
-| **Task** | Binary Classification (Employee Turnover Prediction) |
+> **Version:** 1.0 | **Framework:** scikit-learn | **Created:** March 2026 | **Owner:** Team 22 (IAxRH)
 
 ---
 
-## 2. Model Architecture
+## 1. Model Objective
 
-### 2.1 Algorithm: Random Forest
+**Use case:** Binary classification of employee turnover risk — predicting whether an employee is likely to leave or stay within an organization, to support HR retention strategies.
 
-Random Forest is an ensemble learning method that builds multiple decision trees during training. It combines their predictions through voting (classification) or averaging (regression).
+**Inputs:** Tabular employee data including the following features:
 
-### 2.2 Hyperparameters
+| Feature | Type |
+|---|---|
+| Employment Status | Categorical |
+| Performance Score | Categorical |
+| Engagement Survey | Numeric |
+| Pay Rate | Numeric |
+| Department | Categorical |
+| Tenure (days) | Numeric |
+| Employee Satisfaction | Numeric |
+| Days Late Last 30 | Numeric |
+| Position | Categorical |
+| Special Projects Count | Numeric |
 
-| Parameter | Value | Rationale |
-|-----------|-------|-----------|
-| `n_estimators` | 100 | Balance between accuracy and training time |
-| `max_depth` | 10 | Prevent overfitting |
-| `min_samples_split` | 5 | Minimum samples to split a node |
-| `min_samples_leaf` | 2 | Minimum samples in leaf node |
-| `random_state` | 42 | Reproducibility |
-| `n_jobs` | -1 | Use all CPU cores |
-
-### 2.3 Code
-
-```python
-from sklearn.ensemble import RandomForestClassifier
-
-model = RandomForestClassifier(
-    n_estimators=100,
-    max_depth=10,
-    min_samples_split=5,
-    min_samples_leaf=2,
-    random_state=42,
-    n_jobs=-1
-)
-
-model.fit(X_train, y_train)
-```
+**Outputs:** Binary prediction (`0` = employee likely to stay, `1` = employee likely to leave) along with a probability score (turnover risk %, e.g. `78%`), and a SHAP-based explanation of contributing factors.
 
 ---
 
-## 3. Training Data
+## 2. Training Data
 
-### 3.1 Dataset
+**Dataset used:** Internal HR dataset — `data/hr_data.csv` (single company, not publicly available)
 
-- **Source**: `data/hr_data.csv`
-- **Size**: 310 employees
-- **Split**: 70% training (217), 30% testing (93)
+**Size & diversity:**
 
-### 3.2 Features Used
+- Total samples: **310 employees**
+- Train / test split: **70% training (217 samples) / 30% testing (93 samples)**
+- Class distribution: approximately **67% stayed (Class 0) / 33% left (Class 1)**
+- Diversity: data covers multiple departments (Admin Offices, Sales, IT/IS, Production) and various employment statuses, pay rates, and tenure lengths
 
-| Feature | Type | Importance Rank |
-|---------|------|-----------------|
-| Employment Status | Categorical | 1 |
-| Performance Score | Categorical | 2 |
-| Engagement Survey | Numeric | 3 |
-| Pay Rate | Numeric | 4 |
-| Department | Categorical | 5 |
-| Tenure | Numeric | 6 |
-| Satisfaction | Numeric | 7 |
-| Days Late | Numeric | 8 |
-| Position | Categorical | 9 |
-| Special Projects | Numeric | 10 |
+**Known limitations:**
 
-### 3.3 Target Variable
-
-- `Termd`: Binary (1 = terminated/left, 0 = still employed)
+- The dataset comes from a **single company**, limiting representativeness across industries or organizational cultures
+- The dataset is **small (310 samples)**, which reduces statistical reliability of fairness audits and performance estimates
+- **Class imbalance** (67/33 split) may introduce a bias toward predicting the majority class (stay)
+- No demographic breakdown of the training population is available to assess representation across age, gender, or ethnicity subgroups
 
 ---
 
-## 4. Performance Metrics
+## 3. Performance
 
-### 4.1 Overall Performance
+**Metrics used:** Accuracy, Precision, Recall, F1-Score (per class and overall)
+
+**Global results (test set, n=93):**
 
 | Metric | Score |
-|--------|-------|
-| **Accuracy** | 100% |
-| **Precision** | 100% |
-| **Recall** | 100% |
-| **F1-Score** | 100% |
-
-> ⚠️ **Note**: These metrics are based on the test set (93 samples). The high scores may indicate some overfitting due to the small dataset size.
-
-### 4.2 Confusion Matrix
-
-```
-                  Predicted
-                  0      1
-Actual  0        62     0
-        1         0    31
-```
-
-| Metric | Class 0 (Stay) | Class 1 (Leave) |
-|--------|----------------|-----------------|
-| Precision | 1.00 | 1.00 |
-| Recall | 1.00 | 1.00 |
-| F1-Score | 1.00 | 1.00 |
-
-### 4.3 Classification Report
-
-```
-              precision    recall  f1-score   support
-
-       0       1.00      1.00      1.00        62
-       1       1.00      1.00      1.00        31
-
-    accuracy                           1.00        93
-```
-
----
-
-## 5. Explainability (SHAP)
-
-### 5.1 Global Feature Importance
-
-The top factors influencing turnover predictions:
-
-| Rank | Feature | SHAP Importance |
-|------|---------|-----------------|
-| 1 | Employment Status | Highest |
-| 2 | Department | High |
-| 3 | Engagement Score | Medium |
-| 4 | Pay Rate | Medium |
-| 5 | Tenure | Medium |
-
-### 5.2 Local Explanation Example
-
-For a single employee prediction, the model provides:
-
-```
-Employee ID: #142
-Risk Score: 78%
-
-Contributing Factors (Increasing Risk):
-+---------------------------------------+
-| Factor              | Impact          |
-+---------------------------------------+
-| No promotion (3 yrs)| +22% risk      |
-| High workload       | +18% risk      |
-| Team lead left      | +12% risk      |
-| Salary flat (18mo)  | +8% risk       |
-+--------------------------------------+
-
-Protective Factors (Decreasing Risk):
-+---------------------------------------+
-| Factor              | Impact          |
-+---------------------------------------+
-| High engagement     | -15% risk      |
-| Good performance    | -8% risk       |
-| Stable team         | -5% risk       |
-+---------------------------------------+
-```
-
-### 5.3 How to Interpret
-
-- **Positive SHAP value**: Factor increases turnover risk
-- **Negative SHAP value**: Factor decreases turnover risk
-- **Magnitude**: Larger absolute value = stronger influence
-
----
-
-## 6. Fairness Assessment
-
-### 6.1 Protected Attributes
-
-The following attributes are monitored for potential bias:
-
-| Attribute | Category | Risk |
-|-----------|----------|------|
-| Gender | Protected | Medium |
-| Ethnicity | Protected | Medium |
-| Age | Protected | Low |
-| Marital Status | Protected | Low |
-
-### 6.2 Bias Detection Methods
-
-1. **Demographic Parity**: Equal prediction rates across groups
-2. **Equalized Odds**: Equal TPR/FPR across groups
-3. **Disparate Impact**: 80% rule analysis
-
-### 6.3 Current Fairness Status
-
-| Check | Status | Notes |
-|-------|--------|-------|
-| Gender Parity | ✅ Pass | Predictions balanced across genders |
-| Ethnicity Parity | ✅ Pass | No significant disparity |
-| Age Parity | ✅ Pass | Age ranges treated similarly |
-
-> **Note**: Fairness audit should be performed with larger dataset for definitive results.
-
-### 6.4 Bias Mitigation Strategies
-
-If bias is detected:
-
-1. **Pre-processing**: Remove correlated protected attributes
-2. **In-processing**: Add fairness constraints to loss function
-3. **Post-processing**: Adjust decision thresholds per group
-
----
-
-## 7. Model Limitations
-
-### 7.1 Known Limitations
-
-| Limitation | Impact | Mitigation |
-|------------|--------|------------|
-| Small dataset (310) | May overfit, limited generalization | Collect more data |
-| Single company | Not generalizable | Train on multi-company data |
-| Historical data | No real-time features | Add streaming features |
-| Class imbalance (67/33) | Bias toward majority | Use class weights |
-
-### 7.2 Use Restrictions
-
-- ❌ Do not use for individual employment decisions without human review
-- ❌ Do not use as sole basis for termination
-- ❌ Do not deploy without fairness audit on production data
-- ❌ Do not assume 100% accuracy
-
-### 7.3 Warnings
-
-> **WARNING**: This model is for demonstration purposes. Predictions should be validated by HR professionals before any action is taken.
-
-> **WARNING**: The high accuracy (100%) may indicate overfitting due to the small dataset size. Exercise caution when generalizing.
-
----
-
-## 8. How to Use
-
-### 8.1 Basic Prediction
-
-```python
-import pandas as pd
-import pickle
-
-# Load model
-model = pickle.load(open('model.pkl', 'rb'))
-
-# Prepare employee data
-employee_data = pd.DataFrame({
-    'EngagementSurvey': [3.5],
-    'PayRate': [35.0],
-    'EmpSatisfaction': [3],
-    'Tenure': [730],
-    # ... other features
-})
-
-# Predict
-prediction = model.predict(employee_data)
-probability = model.predict_proba(employee_data)[0][1]
-
-print(f"Turnover Risk: {probability:.1%}")
-```
-
-### 8.2 Getting Explanations
-
-```python
-import shap
-
-explainer = shap.TreeExplainer(model)
-shap_values = explainer.shap_values(employee_data)
-
-# Show explanation
-shap.force_plot(
-    explainer.expected_value[1],
-    shap_values[1][0],
-    employee_data.iloc[0]
-)
-```
-
----
-
-## 9. Model Lifecycle
-
-### 9.1 Version History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | March 2026 | Initial model, Random Forest |
-
-### 9.2 Maintenance Schedule
-
-| Activity | Frequency |
-|----------|------------|
-| Retrain model | Quarterly |
-| Fairness audit | Before each deployment |
-| Performance review | Monthly |
-| Data quality check | Weekly |
-
-### 9.3 Deprecation Plan
-
-- **Version 2.0** (planned): XGBoost + API deployment
-- **Deprecation notice**: 3 months advance notice
-
----
-
-## 10. Model Card Metadata
-
-| Field | Value |
-|-------|-------|
-| **Card Version** | 1.0 |
-| **Model Version** | 1.0 |
-| **Created** | March 2026 |
-| **Owner** | Team 22 (IAxRH) |
-| **License** | MIT |
-| **Contact** | hackathon-team22@capgemini.com |
-
----
-
-## 11. Appendix: Performance by Slice
-
-### Performance by Department
-
-| Department | Precision | Recall | F1 |
-|------------|-----------|--------|-----|
+|---|---|
+| Accuracy | 100% |
+| Precision | 100% |
+| Recall | 100% |
+| F1-Score | 100% |
+
+>  **Important:** A 100% score across all metrics on a 93-sample test set is a strong indicator of **overfitting**. These results should not be interpreted as reflecting real-world generalization capability.
+
+**Results by subgroup:**
+
+| Subgroup | Precision | Recall | F1 |
+|---|---|---|---|
+| Class 0 — Stay | 1.00 | 1.00 | 1.00 |
+| Class 1 — Leave | 1.00 | 1.00 | 1.00 |
 | Admin Offices | 1.00 | 1.00 | 1.00 |
 | Sales | 1.00 | 1.00 | 1.00 |
 | IT/IS | 1.00 | 1.00 | 1.00 |
 | Production | 1.00 | 1.00 | 1.00 |
 
-### Performance by Employment Status
+**Confusion matrix (test set):**
 
-| Status | Precision | Recall | F1 |
-|--------|-----------|--------|-----|
-| Active | 1.00 | 1.00 | 1.00 |
-| Terminated | 1.00 | 1.00 | 1.00 |
+```
+                  Predicted Stay   Predicted Leave
+Actual Stay             62               0
+Actual Leave             0              31
+```
 
 ---
 
-*This model card follows guidelines from the Model Cards for Model Reporting (Mitchell et al., 2019).*
+## 4. Limitations
+
+**Known error risks:**
+
+- The model was trained and evaluated on a single, small dataset; performance on unseen companies or industries is unknown
+- Perfect test-set accuracy strongly suggests the model has **memorized training patterns** rather than learning generalizable signals
+- The model does not incorporate **real-time or dynamic features** (e.g., recent manager change, current project load), which limits its ability to reflect evolving situations
+
+**Out-of-distribution situations not covered:**
+
+- Employees from industries, company sizes, or cultural contexts not present in the training data
+- Extreme or rare cases (e.g., sudden layoffs, company restructuring, health-related departures)
+- New employees with insufficient historical data (short tenure)
+
+**Bias risks:**
+
+- **Gender, ethnicity, age, and marital status** are identified as protected attributes and monitored, but the fairness audit is based on the same small dataset and its conclusions are therefore **not statistically robust**
+- Class imbalance (67% / 33%) may cause the model to underperform on the minority class (leavers) in real-world conditions where data is noisier
+- The top feature (Employment Status) may act as a **proxy variable** that indirectly encodes protected attributes
+
+---
+
+## 5. Risks & Mitigation
+
+**Misuse risks:**
+
+| Risk | Description |
+|---|---|
+| Over-interpretation | Treating a probability score as a definitive decision rather than a signal for further investigation |
+| Out-of-scope use | Applying the model to employment termination, hiring, or promotion decisions |
+| Automation bias | HR professionals deferring entirely to model output without independent judgment |
+| Discriminatory outcomes | Acting on predictions correlated with protected attributes (gender, ethnicity, age) |
+
+**Controls in place:**
+
+-  **Mandatory human review:** All predictions must be reviewed by an HR professional before any action is taken
+-  **SHAP explanations:** Every prediction is accompanied by a local explanation to support interpretability and challenge unjustified outcomes
+-  **Fairness monitoring:** Demographic parity, equalized odds, and disparate impact (80% rule) are assessed across gender, ethnicity, age, and marital status
+-  **Warning messages:** The model surfaces explicit warnings against use as a sole basis for employment decisions
+-  **Bias mitigation strategies defined:** Pre-processing (remove correlated protected attributes), in-processing (fairness constraints), and post-processing (threshold adjustment per group) are documented for use if bias is detected
+-  **Quarterly retraining** and monthly performance reviews are scheduled to detect drift
+
+---
+
+## 6. Energy & Frugality
+
+| Indicator | Value |
+|---|---|
+| Model type | Random Forest (100 trees, max depth 10) |
+| Model size | Not measured — estimated **< 10 MB** for a scikit-learn Random Forest at this scale |
+| Inference time | Not benchmarked — expected **< 100 ms on CPU** for a single prediction given model size |
+| Training energy (CodeCarbon) | Not measured — **to be instrumented** in future versions using [CodeCarbon](https://codecarbon.io/) |
+| Estimated CO₂ impact | Not available — dataset size and training time suggest **negligible footprint** compared to deep learning models |
+
+> **Note:** Energy and carbon measurements should be added in version 2.0 using CodeCarbon or a comparable tool. Given the small dataset and shallow tree-based architecture, the environmental footprint is expected to be minimal.
+
+---
+
+## 7. Cybersecurity
+
+**Input validation:**
+
+- Input features should be **validated for type, range, and completeness** before being passed to the model (e.g., numeric fields must be within plausible HR ranges; categorical fields must belong to known categories)
+- Malformed or unexpected inputs (null values, out-of-range figures, injected strings in categorical fields) must be caught and rejected at the API or preprocessing layer
+- The model does not process free-text inputs, which **eliminates prompt injection risk** for this version — however, if natural language interfaces are added in future versions, anti-injection controls must be implemented
+
+**Secret management:**
+
+- No API keys or credentials are required by the core model (`pickle`-based inference)
+- Any future deployment (REST API, cloud endpoint) must store credentials exclusively in **environment variables or a secrets manager** — never hardcoded in source files or committed to version control (Git)
+- The model artifact (`model.pkl`) should be treated as a **sensitive file**: access should be restricted, and the file should not be publicly exposed
+
+---
