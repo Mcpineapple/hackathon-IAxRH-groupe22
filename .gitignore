@@ -1,7 +1,6 @@
 tmp/
 *.pdf
 *.pptx
-*.txt
 .jupyter_checkpoints/
 .ipynb_checkpoints
 .png
