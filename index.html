@@ -1395,11 +1395,11 @@
                 accuracy: 85
             },
             employees: [
-                { id: "EMP-2847", department: "Engineering", risk_score: 78, top_factor: "No promotion in 3+ years" },
-                { id: "EMP-1523", department: "Sales", risk_score: 72, top_factor: "Overtime > 20 hrs/week" },
-                { id: "EMP-3891", department: "Marketing", risk_score: 68, top_factor: "Low engagement score" },
-                { id: "EMP-2104", department: "HR", risk_score: 65, top_factor: "Manager change" },
-                { id: "EMP-0756", department: "Finance", risk_score: 61, top_factor: "Below market salary" }
+                { id: "EMP-1211050782", department: "Admin Offices", risk_score: 69, top_factor: "Low engagement score" },
+                { id: "EMP-711007713", department: "Admin Offices", risk_score: 86, top_factor: "No promotion in 3+ years" },
+                { id: "EMP-1504073368", department: "Sales", risk_score: 74, top_factor: "Below market salary" },
+                { id: "EMP-1302053046", department: "Sales", risk_score: 61, top_factor: "Overtime > 20 hrs/week" },
+                { id: "EMP-1001167253", department: "Sales", risk_score: 71, top_factor: "Long time since review" }
             ],
             risk_distribution: [245, 312, 198, 156, 134, 98, 104],
             fairness: {
@@ -1452,36 +1452,72 @@
         };
 
         const employeeDetail = {
-            "EMP-2847": {
-                id: "EMP-2847",
-                department: "Engineering",
-                risk_score: 78,
-                prediction: "HIGH_RISK",
-                confidence: 82,
+            "EMP-1211050782": {
+                id: "EMP-1211050782",
+                department: "Admin Offices",
+                position: "Administrative Assistant",
+                risk_score: 69,
+                prediction: "MEDIUM_RISK",
+                confidence: 72,
+                tenure_years: 2.1,
                 shap: {
                     increasing_risk: [
-                        { factor: "No promotion in 3+ years", impact: 22 },
-                        { factor: "Overtime > 20 hours/week", impact: 18 },
-                        { factor: "Low engagement score (3.2)", impact: 12 },
-                        { factor: "Recent manager change", impact: 8 }
+                        { factor: "Low engagement score", impact: 18 },
+                        { factor: "Short tenure", impact: 15 },
+                        { factor: "Below market salary", impact: 12 },
+                        { factor: "Low satisfaction score", impact: 8 }
                     ],
                     decreasing_risk: [
-                        { factor: "High tenure (5+ years)", impact: -15 },
-                        { factor: "Good performance review", impact: -8 },
-                        { factor: "Competitive salary", impact: -5 }
+                        { factor: "Good performance rating", impact: -10 },
+                        { factor: "Stable manager relationship", impact: -6 }
                     ]
                 },
                 features: {
-                    "Tenure (years)": "5.2",
-                    "Time since promotion (months)": "38",
-                    "Overtime hours/week": "22",
-                    "Engagement score": "3.2",
-                    "Performance rating": "4.1",
-                    "Salary ratio to market": "0.95",
-                    "Manager tenure (months)": "4",
-                    "Work-life balance score": "3.5",
-                    "Team size": "8",
-                    "Remote work days/week": "0"
+                    "Tenure (years)": "2.1",
+                    "Engagement score": "2.8",
+                    "Pay rate": "$18.50",
+                    "Performance rating": "4.0",
+                    "Satisfaction": "3.0",
+                },
+                replacement_cost: {
+                    recruitment: 8000,
+                    total: 25000,
+                    weighted: 17250,
+                    category: "Junior"
+                }
+            },
+            "EMP-711007713": {
+                id: "EMP-711007713",
+                department: "Admin Offices",
+                position: "Administrative Assistant",
+                risk_score: 86,
+                prediction: "HIGH_RISK",
+                confidence: 89,
+                tenure_years: 4.5,
+                shap: {
+                    increasing_risk: [
+                        { factor: "No promotion in 3+ years", impact: 24 },
+                        { factor: "Overtime > 20 hours/week", impact: 18 },
+                        { factor: "Low engagement score (2.5)", impact: 14 },
+                        { factor: "Recent manager change", impact: 10 }
+                    ],
+                    decreasing_risk: [
+                        { factor: "Good tenure (4+ years)", impact: -12 },
+                        { factor: "Performance exceeds expectations", impact: -8 }
+                    ]
+                },
+                features: {
+                    "Tenure (years)": "4.5",
+                    "Engagement score": "2.5",
+                    "Pay rate": "$19.00",
+                    "Performance rating": "4.2",
+                    "Satisfaction": "2.8",
+                },
+                replacement_cost: {
+                    recruitment: 8000,
+                    total: 28000,
+                    weighted: 24080,
+                    category: "Junior"
                 }
             }
         };
@@ -1491,20 +1527,28 @@
             const hash = window.location.hash || '#dashboard';
             const page = hash.replace('#', '');
             
+            // Determine which page to show (handle employee-XXX routing)
+            let pageToShow = page;
+            if (page.startsWith('employee')) {
+                pageToShow = 'employee';
+            }
+            
             // Hide all pages
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             
             // Show current page
-            const pageEl = document.getElementById(page);
+            const pageEl = document.getElementById(pageToShow);
             if (pageEl) {
                 pageEl.classList.add('active');
             }
             
-            // Update nav
-            const navLink = document.querySelector(`.nav-link[data-page="${page}"]`);
-            if (navLink) {
-                navLink.classList.add('active');
+            // Update nav (only for main pages, not employee detail)
+            if (['dashboard', 'fairness', 'privacy'].includes(pageToShow)) {
+                const navLink = document.querySelector(`.nav-link[data-page="${pageToShow}"]`);
+                if (navLink) {
+                    navLink.classList.add('active');
+                }
             }
 
             // Initialize page-specific content
@@ -1569,7 +1613,7 @@
                 return '€' + cost.weighted.toLocaleString();
             };
             tbody.innerHTML = employeesData.map(emp => `
-                <tr>
+                <tr onclick="window.location.hash='employee-${emp.id.replace('EMP-', '')}'" style="cursor:pointer">
                     <td class="employee-id">${emp.id}</td>
                     <td><span class="department-badge">${emp.department}</span></td>
                     <td>
@@ -1671,7 +1715,13 @@
             }
 
             // Fallback to cached or mock
-            if (!emp) emp = cachedData['employee_' + empIdStr] || employeeDetail[empIdStr] || employeeDetail["EMP-2847"];
+            if (!emp) emp = cachedData['employee_' + empIdStr] || employeeDetail[empIdStr] || employeeDetail["EMP-1211050782"];
+            
+            // If still no employee, show error
+            if (!emp) {
+                console.error('Employee not found:', empIdStr);
+                return;
+            }
 
             // Update gauge
             const riskClass = getRiskClass(emp.risk_score);
@@ -1709,6 +1759,13 @@
             const shapData = emp.shap_explanation || emp.shap;
             renderShapFactors('shap-increasing', shapData.increasing_risk, 'increase');
             renderShapFactors('shap-decreasing', shapData.decreasing_risk, 'decrease');
+            
+            // Dynamic recommendations
+            const recommendations = generateRecommendations(emp, shapData);
+            const recTextEl = document.querySelector('.recommendation-text');
+            if (recTextEl) {
+                recTextEl.innerHTML = recommendations.map(r => `• ${r}<br>`).join('');
+            }
 
             // Features table
             const featuresBody = document.getElementById('features-table-body');
@@ -1727,6 +1784,88 @@
                     ? 'Hide Details <span>&#9650;</span>' 
                     : 'Show Details <span>&#9660;</span>';
             });
+        }
+
+        function generateRecommendations(emp, shapData) {
+            const recommendations = [];
+            const riskLevel = emp.prediction;
+            const riskScore = emp.risk_score;
+            const increasingFactors = shapData?.increasing_risk || [];
+            const decreasingFactors = shapData?.decreasing_risk || [];
+            const features = emp.features || {};
+            
+            // Combine all factors for keyword matching
+            const allIncreasingText = increasingFactors.map(f => f.factor.toLowerCase()).join(' ');
+            const allDecreasingText = decreasingFactors.map(f => f.factor.toLowerCase()).join(' ');
+            const allText = allIncreasingText + ' ' + allDecreasingText;
+            
+            const tenure = parseFloat(emp.tenure_years) || 0;
+            const satisfaction = parseInt(features.satisfaction) || 0;
+            const engagement = parseFloat(features.engagement_score) || 0;
+            
+            // High risk always gets immediate action
+            if (riskLevel === 'HIGH_RISK') {
+                recommendations.push('URGENT: Schedule a one-on-one meeting within the next 2 weeks to understand concerns.');
+            } else if (riskScore > 50) {
+                recommendations.push('Schedule a meeting within the next month to discuss career development.');
+            }
+            
+            // Check increasing risk factors (things that push employee to leave)
+            if (allIncreasingText.includes('review')) {
+                recommendations.push('Schedule a performance review and discuss short-term goals.');
+            }
+            
+            if (allIncreasingText.includes('salary') || allIncreasingText.includes('pay') || allIncreasingText.includes('market')) {
+                recommendations.push('Conduct a compensation benchmark analysis and consider salary adjustment.');
+            }
+            
+            if (allIncreasingText.includes('tenure') && tenure < 3) {
+                recommendations.push('Focus on onboarding improvements and assign a mentor.');
+            }
+            
+            if (allIncreasingText.includes('project')) {
+                recommendations.push('Assign additional challenging projects to increase engagement.');
+            }
+            
+            if (allIncreasingText.includes('manager') || allIncreasingText.includes('managerid')) {
+                recommendations.push('Ensure proper onboarding with the new manager and establish clear expectations.');
+            }
+            
+            // Check satisfaction/engagement from features
+            if (satisfaction > 0 && satisfaction <= 2) {
+                recommendations.push('Conduct a private conversation to understand satisfaction concerns.');
+            }
+            
+            if (engagement > 0 && engagement < 3) {
+                recommendations.push('Gather detailed feedback through an anonymous survey to identify root causes.');
+            }
+            
+            // Check decreasing factors (protective factors)
+            if (allDecreasingText.includes('tenure') && tenure > 3) {
+                recommendations.push('Leverage tenure as a retention strength - highlight long-term benefits and growth opportunities.');
+            }
+            
+            if (allDecreasingText.includes('performance')) {
+                recommendations.push('Recognize achievements publicly and discuss leadership opportunities.');
+            }
+            
+            // Default recommendations based on risk level
+            if (recommendations.length <= 1) {
+                if (riskScore > 40) {
+                    recommendations.push('Monitor through regular check-ins and maintain open communication.');
+                } else if (riskScore > 20) {
+                    recommendations.push('Continue engagement through standard HR touchpoints.');
+                } else {
+                    recommendations.push('Employee shows stable engagement - maintain current retention practices.');
+                }
+            }
+            
+            // Always add follow-up
+            const timeline = riskLevel === 'HIGH_RISK' ? '1 month' : '3 months';
+            recommendations.push(`Schedule a follow-up in ${timeline} to track progress.`);
+            
+            // Limit to 4 recommendations max
+            return recommendations.slice(0, 4);
         }
 
         function renderShapFactors(containerId, factors, direction) {

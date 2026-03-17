@@ -7,6 +7,7 @@ import os
 import sys
 import hashlib
 from pathlib import Path
+from numbers import Number
 
 import pandas as pd
 import numpy as np
@@ -319,6 +320,22 @@ def get_shap_explanation(employee_row):
     }
 
 
+def convert_to_native(obj):
+    """Convert numpy types to native Python types for JSON serialization"""
+    if isinstance(obj, dict):
+        return {k: convert_to_native(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_to_native(v) for v in obj]
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    else:
+        return obj
+
+
 def predict_employee(emp_id):
     """Get prediction for a specific employee"""
     global hr_data
@@ -383,27 +400,29 @@ def predict_employee(emp_id):
     # Get top factor
     top_factor = shap_api['increasing_risk'][0]['factor'] if shap_api['increasing_risk'] else 'Multiple factors'
     
-    return {
+    result = {
         'id': f'EMP-{emp_id}',
         'emp_id': int(emp_id),
         'name': emp['Employee_Name'].strip() if pd.notna(emp['Employee_Name']) else 'Unknown',
-        'department': emp['Department'] if pd.notna(emp['Department']) else 'Unknown',
+        'department': emp['Department'].strip() if pd.notna(emp['Department']) else 'Unknown',
         'position': position,
         'risk_score': int(prob * 100),
         'prediction': risk_level,
         'confidence': int(prob * 100),
         'top_factor': top_factor,
-        'tenure_years': round(tenure_years, 1),
+        'tenure_years': round(float(tenure_years), 1),
         'shap_explanation': shap_api,
         'replacement_cost': cost,
         'features': {
-            'tenure_years': round(tenure_years, 1),
-            'engagement_score': emp_features.get('EngagementSurvey', 0),
-            'pay_rate': emp_features.get('PayRate', 0),
-            'performance_rating': emp_features.get('PerfScoreID', 0),
-            'satisfaction': emp_features.get('EmpSatisfaction', 0),
+            'tenure_years': round(float(tenure_years), 1),
+            'engagement_score': float(emp_features.get('EngagementSurvey', 0)),
+            'pay_rate': float(emp_features.get('PayRate', 0)),
+            'performance_rating': int(emp_features.get('PerfScoreID', 0)),
+            'satisfaction': int(emp_features.get('EmpSatisfaction', 0)),
         }
     }
+    
+    return convert_to_native(result)
 
 
 def get_all_employees():
