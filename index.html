@@ -243,6 +243,10 @@
         }
 
         tr {
+            cursor: default;
+        }
+
+        tr {
             cursor: pointer;
             transition: background 0.2s;
         }
@@ -1565,7 +1569,7 @@
                 return '€' + cost.weighted.toLocaleString();
             };
             tbody.innerHTML = employeesData.map(emp => `
-                <tr onclick="window.location.hash='#employee-${emp.id}'">
+                <tr>
                     <td class="employee-id">${emp.id}</td>
                     <td><span class="department-badge">${emp.department}</span></td>
                     <td>
