@@ -5,3 +5,4 @@ tmp/
 .jupyter_checkpoints/
 .ipynb_checkpoints
 .png
+outputs/
