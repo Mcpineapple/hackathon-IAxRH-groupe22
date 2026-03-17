@@ -173,6 +173,7 @@
         .stat-value.risk-low { color: var(--green); }
         .stat-value.risk-medium { color: var(--amber); }
         .stat-value.risk-high { color: var(--red); }
+        .stat-value.cost { color: var(--teal); }
 
         .stat-detail {
             font-size: 0.75rem;
@@ -306,6 +307,12 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        td.cost {
+            font-weight: 600;
+            color: var(--teal);
+            white-space: nowrap;
         }
 
         .action-arrow {
@@ -466,6 +473,55 @@
 
         .prediction-detail strong {
             color: var(--navy);
+        }
+
+        /* Replacement Cost Card */
+        .cost-card {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            color: var(--white);
+        }
+
+        .cost-card .card-title {
+            color: var(--white);
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .cost-amount {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--teal);
+            margin-bottom: 1rem;
+        }
+
+        .cost-breakdown {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .cost-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cost-label {
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+
+        .cost-value {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .cost-note {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            font-style: italic;
         }
 
         /* SHAP Explanation */
@@ -970,23 +1026,23 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-label">Total Employees Monitored</div>
-                    <div class="stat-value" id="stat-total">1,247</div>
-                    <div class="stat-detail">Across 12 departments</div>
+                    <div class="stat-value" id="stat-total">310</div>
+                    <div class="stat-detail">Across all departments</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Average Risk Score</div>
-                    <div class="stat-value" id="stat-avg-risk">34%</div>
-                    <div class="stat-detail">Updated 2 hours ago</div>
+                    <div class="stat-value" id="stat-avg-risk">38%</div>
+                    <div class="stat-detail">ML model prediction</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">High Risk Employees</div>
-                    <div class="stat-value risk-high" id="stat-high-risk">89</div>
-                    <div class="stat-detail">7.1% of workforce</div>
+                    <div class="stat-label">At-Risk Employees</div>
+                    <div class="stat-value risk-high" id="stat-high-risk">107</div>
+                    <div class="stat-detail">High + Medium risk</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Model Accuracy</div>
-                    <div class="stat-value" id="stat-accuracy">85%</div>
-                    <div class="stat-detail">Validated on 3,200 records</div>
+                    <div class="stat-label">Est. Replacement Cost</div>
+                    <div class="stat-value cost" id="stat-cost">€0</div>
+                    <div class="stat-detail">Weighted by risk</div>
                 </div>
             </div>
 
@@ -1010,6 +1066,7 @@
                                     <th>ID</th>
                                     <th>Department</th>
                                     <th>Risk Score</th>
+                                    <th>Replacement Cost</th>
                                     <th>Top Factor</th>
                                     <th></th>
                                 </tr>
@@ -1058,11 +1115,33 @@
                 <!-- Prediction Info -->
                 <div class="prediction-card">
                     <span class="prediction-label high" id="prediction-label">HIGH RISK</span>
-                    <p class="prediction-detail"><strong>Confidence:</strong> 82%</p>
-                    <p class="prediction-detail"><strong>Based on:</strong> 10 features</p>
+                    <p class="prediction-detail"><strong>Confidence:</strong> <span id="emp-confidence">82%</span></p>
+                    <p class="prediction-detail"><strong>Position:</strong> <span id="emp-position">Software Engineer</span></p>
                     <p class="prediction-detail"><strong>Employee ID:</strong> <span id="emp-id">EMP-2847</span></p>
                     <p class="prediction-detail"><strong>Department:</strong> <span id="emp-dept">Engineering</span></p>
+                    <p class="prediction-detail"><strong>Tenure:</strong> <span id="emp-tenure">5.2 years</span></p>
                 </div>
+            </div>
+
+            <!-- Replacement Cost Card -->
+            <div class="cost-card">
+                <h3 class="card-title">Estimated Replacement Cost</h3>
+                <div class="cost-amount" id="emp-cost">€15,000</div>
+                <div class="cost-breakdown">
+                    <div class="cost-item">
+                        <span class="cost-label">Recruitment:</span>
+                        <span class="cost-value" id="cost-recruitment">€10,000</span>
+                    </div>
+                    <div class="cost-item">
+                        <span class="cost-label">Total Cost:</span>
+                        <span class="cost-value" id="cost-total">€40,000</span>
+                    </div>
+                    <div class="cost-item">
+                        <span class="cost-label">Category:</span>
+                        <span class="cost-value" id="cost-category">Senior</span>
+                    </div>
+                </div>
+                <p class="cost-note">Weighted by risk probability</p>
             </div>
 
             <!-- SHAP Explanation -->
@@ -1470,7 +1549,10 @@
             document.getElementById('stat-total').textContent = stats.total_employees.toLocaleString();
             document.getElementById('stat-avg-risk').textContent = stats.avg_risk + '%';
             document.getElementById('stat-high-risk').textContent = stats.high_risk_count;
-            document.getElementById('stat-accuracy').textContent = stats.accuracy + '%';
+            
+            // Replacement cost
+            const totalCost = stats.total_replacement_cost || 0;
+            document.getElementById('stat-cost').textContent = '€' + (totalCost / 1000).toFixed(0) + 'K';
 
             // Risk color coding
             const avgRiskEl = document.getElementById('stat-avg-risk');
@@ -1478,6 +1560,10 @@
 
             // Populate high risk table
             const tbody = document.getElementById('high-risk-table');
+            const formatCost = (cost) => {
+                if (!cost || !cost.weighted) return 'N/A';
+                return '€' + cost.weighted.toLocaleString();
+            };
             tbody.innerHTML = employeesData.map(emp => `
                 <tr onclick="window.location.hash='#employee-${emp.id}'">
                     <td class="employee-id">${emp.id}</td>
@@ -1490,6 +1576,7 @@
                             <span class="risk-value ${getRiskClass(emp.risk_score)}">${emp.risk_score}%</span>
                         </div>
                     </td>
+                    <td class="cost">${formatCost(emp.replacement_cost)}</td>
                     <td class="top-factor">${emp.top_factor}</td>
                     <td class="action-arrow">&#8594;</td>
                 </tr>
@@ -1603,6 +1690,16 @@
             // Employee info
             document.getElementById('emp-id').textContent = emp.id;
             document.getElementById('emp-dept').textContent = emp.department;
+            document.getElementById('emp-position').textContent = emp.position || emp.department;
+            document.getElementById('emp-confidence').textContent = (emp.confidence || emp.risk_score) + '%';
+            document.getElementById('emp-tenure').textContent = (emp.tenure_years || 0) + ' years';
+
+            // Replacement cost
+            const cost = emp.replacement_cost || {};
+            document.getElementById('emp-cost').textContent = '€' + (cost.weighted || 0).toLocaleString();
+            document.getElementById('cost-recruitment').textContent = '€' + (cost.recruitment || 0).toLocaleString();
+            document.getElementById('cost-total').textContent = '€' + (cost.total || 0).toLocaleString();
+            document.getElementById('cost-category').textContent = cost.category || 'N/A';
 
             // SHAP explanations (handle both API and mock format)
             const shapData = emp.shap_explanation || emp.shap;
