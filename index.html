@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetainAI - HR Turnover Prediction with Explainable AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #1e3a5f;
+            --white: #ffffff;
+            --gray: #f4f6f8;
+            --teal: #0d9488;
+            --red: #dc2626;
+            --green: #16a34a;
+            --amber: #d97706;
+            --navy-light: #2d4a6f;
+            --gray-dark: #64748b;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--gray);
+            color: var(--navy);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--navy);
+            color: var(--white);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--teal);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--white);
+        }
+
+        .nav {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .nav-link {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--white);
+        }
+
+        .nav-link.active {
+            background: var(--teal);
+            color: var(--white);
+        }
+
+        .demo-badge {
+            background: var(--amber);
+            color: var(--white);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Page Title */
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--navy);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--gray-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+
+        .stat-value.risk-low { color: var(--green); }
+        .stat-value.risk-medium { color: var(--amber); }
+        .stat-value.risk-high { color: var(--red); }
+
+        .stat-detail {
+            font-size: 0.75rem;
+            color: var(--gray-dark);
+            margin-top: 0.25rem;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--navy);
+        }
+
+        /* Chart Container */
+        .chart-container {
+            height: 280px;
+            position: relative;
+        }
+
+        /* High Risk Table */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gray-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid var(--gray);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray);
+            vertical-align: middle;
+        }
+
+        tr {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        tr:hover {
+            background: var(--gray);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .employee-id {
+            font-weight: 600;
+            color: var(--navy);
+        }
+
+        .department-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: var(--gray);
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Risk Bar */
+        .risk-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .risk-bar {
+            width: 80px;
+            height: 8px;
+            background: var(--gray);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .risk-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .risk-bar-fill.low { background: var(--green); }
+        .risk-bar-fill.medium { background: var(--amber); }
+        .risk-bar-fill.high { background: var(--red); }
+
+        .risk-value {
+            font-weight: 600;
+            font-size: 0.875rem;
+            min-width: 40px;
+        }
+
+        .top-factor {
+            font-size: 0.8rem;
+            color: var(--gray-dark);
+            max-width: 180px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .action-arrow {
+            color: var(--teal);
+            font-weight: 600;
+        }
+
+        /* Compliance Footer */
+        .compliance-footer {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 1.5rem;
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .compliance-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .compliance-badge.green {
+            background: rgba(22, 163, 74, 0.1);
+            color: var(--green);
+        }
+
+        .compliance-badge.teal {
+            background: rgba(13, 148, 136, 0.1);
+            color: var(--teal);
+        }
+
+        .compliance-badge.navy {
+            background: rgba(30, 58, 95, 0.1);
+            color: var(--navy);
+        }
+
+        /* Employee Detail Page */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--teal);
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--navy);
+        }
+
+        .detail-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .detail-header {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .risk-gauge-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .gauge-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 1.5rem;
+        }
+
+        .gauge-bg {
+            fill: none;
+            stroke: var(--gray);
+            stroke-width: 20;
+        }
+
+        .gauge-fill {
+            fill: none;
+            stroke-width: 20;
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: center;
+            transition: stroke-dashoffset 1s ease;
+        }
+
+        .gauge-fill.low { stroke: var(--green); }
+        .gauge-fill.medium { stroke: var(--amber); }
+        .gauge-fill.high { stroke: var(--red); }
+
+        .gauge-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            font-weight: 700;
+        }
+
+        .gauge-label {
+            font-size: 1rem;
+            color: var(--gray-dark);
+            font-weight: 500;
+        }
+
+        .prediction-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .prediction-label {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 1.125rem;
+            margin-bottom: 1rem;
+        }
+
+        .prediction-label.high {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--red);
+        }
+
+        .prediction-label.medium {
+            background: rgba(217, 119, 6, 0.1);
+            color: var(--amber);
+        }
+
+        .prediction-label.low {
+            background: rgba(22, 163, 74, 0.1);
+            color: var(--green);
+        }
+
+        .prediction-detail {
+            color: var(--gray-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .prediction-detail strong {
+            color: var(--navy);
+        }
+
+        /* SHAP Explanation */
+        .shap-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .shap-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--navy);
+        }
+
+        .shap-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .shap-section-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .shap-section-title.increase {
+            color: var(--red);
+        }
+
+        .shap-section-title.decrease {
+            color: var(--green);
+        }
+
+        .shap-factor {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .shap-factor-label {
+            flex: 1;
+            font-size: 0.875rem;
+        }
+
+        .shap-factor-bar {
+            width: 200px;
+            height: 24px;
+            background: var(--gray);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .shap-factor-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            position: absolute;
+        }
+
+        .shap-factor-bar-fill.increase {
+            background: var(--red);
+            left: 50%;
+        }
+
+        .shap-factor-bar-fill.decrease {
+            background: var(--green);
+            right: 50%;
+        }
+
+        .shap-factor-value {
+            font-weight: 600;
+            font-size: 0.875rem;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .shap-factor-value.positive { color: var(--red); }
+        .shap-factor-value.negative { color: var(--green); }
+
+        /* Feature Details */
+        .features-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .features-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding-bottom: 1rem;
+        }
+
+        .features-toggle {
+            background: none;
+            border: none;
+            color: var(--teal);
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .features-toggle:hover {
+            color: var(--navy);
+        }
+
+        .features-content {
+            display: none;
+        }
+
+        .features-content.open {
+            display: block;
+        }
+
+        .features-table td {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .features-table td:first-child {
+            font-weight: 500;
+            color: var(--gray-dark);
+            width: 40%;
+        }
+
+        /* Recommendation Panel */
+        .recommendation-card {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+            border-radius: 8px;
+            padding: 2rem;
+            color: var(--white);
+            margin-bottom: 2rem;
+        }
+
+        .recommendation-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .recommendation-text {
+            opacity: 0.9;
+            line-height: 1.7;
+        }
+
+        .recommendation-disclaimer {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        /* Fairness Page */
+        .fairness-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .fairness-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .fairness-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .fairness-card.active {
+            border-color: var(--teal);
+        }
+
+        .fairness-card.pass { border-left: 4px solid var(--green); }
+        .fairness-card.warning { border-left: 4px solid var(--amber); }
+        .fairness-card.fail { border-left: 4px solid var(--red); }
+
+        .fairness-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .fairness-name {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .fairness-status {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .fairness-status.pass { color: var(--green); }
+        .fairness-status.warning { color: var(--amber); }
+        .fairness-status.fail { color: var(--red); }
+
+        .fairness-ratio {
+            font-size: 0.75rem;
+            color: var(--gray-dark);
+            margin-top: 0.5rem;
+        }
+
+        .fairness-detail {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .fairness-detail-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .metrics-table {
+            margin-bottom: 1.5rem;
+        }
+
+        .metrics-table th {
+            background: var(--gray);
+        }
+
+        .disparate-impact {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--gray);
+            border-radius: 6px;
+            margin-top: 1rem;
+        }
+
+        .disparate-impact-label {
+            font-weight: 500;
+        }
+
+        .disparate-impact-value {
+            font-weight: 700;
+            color: var(--navy);
+        }
+
+        .disparate-impact-status {
+            margin-left: auto;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .disparate-impact-status.pass {
+            background: rgba(22, 163, 74, 0.1);
+            color: var(--green);
+        }
+
+        .disparate-impact-status.warning {
+            background: rgba(217, 119, 6, 0.1);
+            color: var(--amber);
+        }
+
+        .fairness-chart {
+            height: 300px;
+            margin-top: 2rem;
+        }
+
+        /* Privacy Page */
+        .privacy-hero {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 3rem 2rem;
+            box-shadow: var(--shadow);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .privacy-badges {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .privacy-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .privacy-badge-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+        }
+
+        .privacy-badge-icon.green {
+            background: rgba(22, 163, 74, 0.1);
+        }
+
+        .privacy-badge-icon.teal {
+            background: rgba(13, 148, 136, 0.1);
+        }
+
+        .privacy-badge-icon.navy {
+            background: rgba(30, 58, 95, 0.1);
+        }
+
+        .privacy-badge-text {
+            font-weight: 600;
+            color: var(--navy);
+        }
+
+        .privacy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .privacy-info-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .privacy-info-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .privacy-info-text {
+            color: var(--gray-dark);
+            line-height: 1.7;
+        }
+
+        .restrictions-list {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .restrictions-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .restriction-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--gray);
+        }
+
+        .restriction-item:last-child {
+            border-bottom: none;
+        }
+
+        .restriction-icon {
+            font-size: 1.5rem;
+        }
+
+        .restriction-text {
+            color: var(--gray-dark);
+        }
+
+        .rights-section {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .rights-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .rights-list {
+            list-style: none;
+        }
+
+        .rights-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--gray);
+        }
+
+        .rights-list li:last-child {
+            border-bottom: none;
+        }
+
+        .rights-icon {
+            color: var(--teal);
+            font-weight: 700;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .nav {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .main {
+                padding: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .detail-header {
+                grid-template-columns: 1fr;
+            }
+
+            .shap-factor {
+                flex-wrap: wrap;
+            }
+
+            .shap-factor-bar {
+                width: 100%;
+                order: 3;
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+            </div>
+            RetainAI
+        </div>
+        <nav class="nav">
+            <a href="#dashboard" class="nav-link active" data-page="dashboard">Dashboard</a>
+            <a href="#fairness" class="nav-link" data-page="fairness">Fairness Audit</a>
+            <a href="#privacy" class="nav-link" data-page="privacy">Privacy Center</a>
+        </nav>
+        <span class="demo-badge">Demo Mode</span>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Dashboard Page -->
+        <div id="dashboard" class="page active">
+            <h1 class="page-title">Workforce Risk Overview</h1>
+            
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Employees Monitored</div>
+                    <div class="stat-value" id="stat-total">1,247</div>
+                    <div class="stat-detail">Across 12 departments</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Average Risk Score</div>
+                    <div class="stat-value" id="stat-avg-risk">34%</div>
+                    <div class="stat-detail">Updated 2 hours ago</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">High Risk Employees</div>
+                    <div class="stat-value risk-high" id="stat-high-risk">89</div>
+                    <div class="stat-detail">7.1% of workforce</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Model Accuracy</div>
+                    <div class="stat-value" id="stat-accuracy">85%</div>
+                    <div class="stat-detail">Validated on 3,200 records</div>
+                </div>
+            </div>
+
+            <!-- Dashboard Grid -->
+            <div class="dashboard-grid">
+                <!-- Risk Distribution Chart -->
+                <div class="card">
+                    <h2 class="card-title">Risk Score Distribution</h2>
+                    <div class="chart-container">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- High Risk Table -->
+                <div class="card">
+                    <h2 class="card-title">High Risk Employees</h2>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Department</th>
+                                    <th>Risk Score</th>
+                                    <th>Top Factor</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="high-risk-table">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compliance Footer -->
+            <div class="compliance-footer">
+                <div class="compliance-badge green">
+                    <span>&#10003;</span> GDPR Compliant
+                </div>
+                <div class="compliance-badge teal">
+                    <span>&#10003;</span> Fairness Audited
+                </div>
+                <div class="compliance-badge navy">
+                    <span>&#10003;</span> Human-in-the-Loop Required
+                </div>
+            </div>
+        </div>
+
+        <!-- Employee Detail Page -->
+        <div id="employee" class="page">
+            <a href="#dashboard" class="back-link">
+                <span>&#8592;</span> Back to Dashboard
+            </a>
+
+            <div class="detail-header">
+                <!-- Risk Gauge -->
+                <div class="risk-gauge-card">
+                    <div class="gauge-container">
+                        <svg viewBox="0 0 200 200" width="200" height="200">
+                            <circle class="gauge-bg" cx="100" cy="100" r="80"/>
+                            <circle class="gauge-fill high" id="gauge-fill" cx="100" cy="100" r="80" 
+                                stroke-dasharray="502" stroke-dashoffset="110"/>
+                        </svg>
+                        <div class="gauge-value risk-high" id="gauge-value">78%</div>
+                    </div>
+                    <div class="gauge-label">Turnover Risk</div>
+                </div>
+
+                <!-- Prediction Info -->
+                <div class="prediction-card">
+                    <span class="prediction-label high" id="prediction-label">HIGH RISK</span>
+                    <p class="prediction-detail"><strong>Confidence:</strong> 82%</p>
+                    <p class="prediction-detail"><strong>Based on:</strong> 10 features</p>
+                    <p class="prediction-detail"><strong>Employee ID:</strong> <span id="emp-id">EMP-2847</span></p>
+                    <p class="prediction-detail"><strong>Department:</strong> <span id="emp-dept">Engineering</span></p>
+                </div>
+            </div>
+
+            <!-- SHAP Explanation -->
+            <div class="shap-card">
+                <h2 class="shap-title">Why This Prediction</h2>
+                
+                <div class="shap-section">
+                    <div class="shap-section-title increase">
+                        <span>&#9650;</span> Factors Increasing Risk
+                    </div>
+                    <div id="shap-increasing">
+                    </div>
+                </div>
+
+                <div class="shap-section">
+                    <div class="shap-section-title decrease">
+                        <span>&#9660;</span> Factors Decreasing Risk
+                    </div>
+                    <div id="shap-decreasing">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature Details -->
+            <div class="features-card">
+                <div class="features-header">
+                    <h3 class="card-title" style="margin-bottom:0">All Feature Values</h3>
+                    <button class="features-toggle" id="features-toggle">
+                        Show Details <span>&#9660;</span>
+                    </button>
+                </div>
+                <div class="features-content" id="features-content">
+                    <table class="features-table">
+                        <tbody id="features-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recommendation Panel -->
+            <div class="recommendation-card">
+                <div class="recommendation-title">
+                    <span>&#128161;</span> Recommended Actions
+                </div>
+                <p class="recommendation-text">
+                    Consider scheduling a career development discussion with this employee. 
+                    Review promotion eligibility and discuss workload balance given the overtime hours. 
+                    A 6-month check-in is recommended to track progress.
+                </p>
+                <p class="recommendation-disclaimer">
+                    This prediction is for HR planning purposes only and does not constitute 
+                    a termination recommendation. All decisions should involve human review.
+                </p>
+            </div>
+        </div>
+
+        <!-- Fairness Audit Page -->
+        <div id="fairness" class="page">
+            <h1 class="page-title">Fairness Audit</h1>
+            <p style="color: var(--gray-dark); margin-bottom: 2rem;">Last audited: March 17, 2026</p>
+
+            <!-- Status Cards -->
+            <div class="fairness-grid">
+                <div class="fairness-card pass active" data-attribute="gender">
+                    <div class="fairness-icon">&#9792;</div>
+                    <div class="fairness-name">Gender</div>
+                    <div class="fairness-status pass">&#10003; Pass</div>
+                    <div class="fairness-ratio">DI: 0.94</div>
+                </div>
+                <div class="fairness-card pass" data-attribute="ethnicity">
+                    <div class="fairness-icon">&#127912;</div>
+                    <div class="fairness-name">Ethnicity</div>
+                    <div class="fairness-status pass">&#10003; Pass</div>
+                    <div class="fairness-ratio">DI: 0.91</div>
+                </div>
+                <div class="fairness-card warning" data-attribute="age">
+                    <div class="fairness-icon">&#128197;</div>
+                    <div class="fairness-name">Age</div>
+                    <div class="fairness-status warning">&#9888; Warning</div>
+                    <div class="fairness-ratio">DI: 0.78</div>
+                </div>
+                <div class="fairness-card pass" data-attribute="marital_status">
+                    <div class="fairness-icon">&#128141;</div>
+                    <div class="fairness-name">Marital Status</div>
+                    <div class="fairness-status pass">&#10003; Pass</div>
+                    <div class="fairness-ratio">DI: 0.96</div>
+                </div>
+            </div>
+
+            <!-- Detailed Metrics -->
+            <div class="fairness-detail" id="fairness-detail">
+                <h2 class="fairness-detail-title">Gender Analysis</h2>
+                <div class="table-container">
+                    <table class="metrics-table">
+                        <thead>
+                            <tr>
+                                <th>Group</th>
+                                <th>Precision</th>
+                                <th>Recall</th>
+                                <th>F1 Score</th>
+                                <th>Sample Size</th>
+                            </tr>
+                        </thead>
+                        <tbody id="metrics-body">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="disparate-impact">
+                    <span class="disparate-impact-label">Disparate Impact Ratio (80% rule):</span>
+                    <span class="disparate-impact-value" id="di-value">0.94</span>
+                    <span class="disparate-impact-status pass" id="di-status">Pass</span>
+                </div>
+            </div>
+
+            <!-- Chart -->
+            <div class="card">
+                <h2 class="card-title">Precision by Group</h2>
+                <div class="fairness-chart">
+                    <canvas id="fairnessChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Privacy Center Page -->
+        <div id="privacy" class="page">
+            <h1 class="page-title">Privacy & Compliance</h1>
+
+            <!-- Compliance Hero -->
+            <div class="privacy-hero">
+                <div class="privacy-badges">
+                    <div class="privacy-badge">
+                        <div class="privacy-badge-icon green">&#128274;</div>
+                        <span class="privacy-badge-text">GDPR Compliant</span>
+                    </div>
+                    <div class="privacy-badge">
+                        <div class="privacy-badge-icon teal">&#128272;</div>
+                        <span class="privacy-badge-text">Data Encrypted</span>
+                    </div>
+                    <div class="privacy-badge">
+                        <div class="privacy-badge-icon navy">&#128203;</div>
+                        <span class="privacy-badge-text">Independently Audited</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Cards -->
+            <div class="privacy-grid">
+                <div class="privacy-info-card">
+                    <h3 class="privacy-info-title">
+                        <span>&#128100;</span> Anonymization
+                    </h3>
+                    <p class="privacy-info-text">
+                        Employee names are replaced with anonymized IDs before being processed by our model. 
+                        The mapping between IDs and names is stored separately with access restricted to 
+                        authorized HR personnel only.
+                    </p>
+                </div>
+                <div class="privacy-info-card">
+                    <h3 class="privacy-info-title">
+                        <span>&#128221;</span> Consent Tracking
+                    </h3>
+                    <p class="privacy-info-text">
+                        All predictions are tied to explicit consent records. Employees can withdraw 
+                        consent at any time, which immediately stops all future predictions and 
+                        triggers data handling review.
+                    </p>
+                </div>
+            </div>
+
+            <!-- What We Don't Use -->
+            <div class="restrictions-list">
+                <h2 class="restrictions-title">What We Don't Use</h2>
+                <div class="restriction-item">
+                    <span class="restriction-icon">&#120;&#120;</span>
+                    <span class="restriction-text">Facial recognition or biometric data</span>
+                </div>
+                <div class="restriction-item">
+                    <span class="restriction-icon">&#128247;</span>
+                    <span class="restriction-text">Social media activity or public profiles</span>
+                </div>
+                <div class="restriction-item">
+                    <span class="restriction-icon">&#128154;</span>
+                    <span class="restriction-text">Health records or medical information</span>
+                </div>
+                <div class="restriction-item">
+                    <span class="restriction-icon">&#128172;</span>
+                    <span class="restriction-text">Personal communications or messages</span>
+                </div>
+                <div class="restriction-item">
+                    <span class="restriction-icon">&#127968;</span>
+                    <span class="restriction-text">Physical location or badge tracking data</span>
+                </div>
+            </div>
+
+            <!-- Employee Rights -->
+            <div class="rights-section">
+                <h2 class="rights-title">Employee Rights</h2>
+                <ul class="rights-list">
+                    <li>
+                        <span class="rights-icon">&#10003;</span>
+                        <span><strong>Right to Explanation</strong> - Every employee has the right to receive a plain-language explanation of any prediction made about them.</span>
+                    </li>
+                    <li>
+                        <span class="rights-icon">&#10003;</span>
+                        <span><strong>Right to Access</strong> - Employees can request to see all data used in their predictions at any time.</span>
+                    </li>
+                    <li>
+                        <span class="rights-icon">&#10003;</span>
+                        <span><strong>Right to Deletion</strong> - Under GDPR, employees can request deletion of their prediction history.</span>
+                    </li>
+                    <li>
+                        <span class="rights-icon">&#10003;</span>
+                        <span><strong>Right to Opt-Out</strong> - Employees can opt-out of turnover predictions without affecting their employment status.</span>
+                    </li>
+                    <li>
+                        <span class="rights-icon">&#10003;</span>
+                        <span><strong>Right to Human Review</strong> - All high-risk predictions require manual HR review before any action.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // API Base URL
+        const API_BASE = '';
+
+        // API Fetch helper
+        async function fetchAPI(endpoint) {
+            try {
+                const response = await fetch(API_BASE + endpoint);
+                if (!response.ok) throw new Error('API error');
+                return await response.json();
+            } catch (e) {
+                console.warn('API not available, using fallback data:', e.message);
+                return null;
+            }
+        }
+
+        // Cached data
+        let cachedData = {};
+        const mockData = {
+            stats: {
+                total_employees: 1247,
+                avg_risk: 34,
+                high_risk_count: 89,
+                accuracy: 85
+            },
+            employees: [
+                { id: "EMP-2847", department: "Engineering", risk_score: 78, top_factor: "No promotion in 3+ years" },
+                { id: "EMP-1523", department: "Sales", risk_score: 72, top_factor: "Overtime > 20 hrs/week" },
+                { id: "EMP-3891", department: "Marketing", risk_score: 68, top_factor: "Low engagement score" },
+                { id: "EMP-2104", department: "HR", risk_score: 65, top_factor: "Manager change" },
+                { id: "EMP-0756", department: "Finance", risk_score: 61, top_factor: "Below market salary" }
+            ],
+            risk_distribution: [245, 312, 198, 156, 134, 98, 104],
+            fairness: {
+                gender: {
+                    status: "pass",
+                    disparate_impact: 0.94,
+                    metrics: [
+                        { group: "Male", precision: 95, recall: 92, f1: 93, sample: 623 },
+                        { group: "Female", precision: 93, recall: 94, f1: 93, sample: 587 },
+                        { group: "Non-binary", precision: "N/A", recall: "N/A", f1: "N/A", sample: 37 }
+                    ]
+                },
+                ethnicity: {
+                    status: "pass",
+                    disparate_impact: 0.91,
+                    metrics: [
+                        { group: "White", precision: 92, recall: 91, f1: 91, sample: 445 },
+                        { group: "Asian", precision: 94, recall: 93, f1: 93, sample: 312 },
+                        { group: "Black", precision: 90, recall: 89, f1: 89, sample: 198 },
+                        { group: "Hispanic", precision: 91, recall: 90, f1: 90, sample: 156 },
+                        { group: "Other", precision: 88, recall: 87, f1: 87, sample: 136 }
+                    ]
+                },
+                age: {
+                    status: "warning",
+                    disparate_impact: 0.78,
+                    metrics: [
+                        { group: "18-30", precision: 88, recall: 85, f1: 86, sample: 298 },
+                        { group: "31-45", precision: 94, recall: 92, f1: 93, sample: 512 },
+                        { group: "46-60", precision: 96, recall: 94, f1: 95, sample: 356 },
+                        { group: "60+", precision: 89, recall: 86, f1: 87, sample: 81 }
+                    ]
+                },
+                marital_status: {
+                    status: "pass",
+                    disparate_impact: 0.96,
+                    metrics: [
+                        { group: "Single", precision: 91, recall: 90, f1: 90, sample: 412 },
+                        { group: "Married", precision: 93, recall: 92, f1: 92, sample: 623 },
+                        { group: "Divorced", precision: 92, recall: 91, f1: 91, sample: 156 },
+                        { group: "Widowed", precision: 90, recall: 89, f1: 89, sample: 56 }
+                    ]
+                }
+            },
+            compliance: {
+                gdpr: true,
+                encrypted: true,
+                audited: true
+            }
+        };
+
+        const employeeDetail = {
+            "EMP-2847": {
+                id: "EMP-2847",
+                department: "Engineering",
+                risk_score: 78,
+                prediction: "HIGH_RISK",
+                confidence: 82,
+                shap: {
+                    increasing_risk: [
+                        { factor: "No promotion in 3+ years", impact: 22 },
+                        { factor: "Overtime > 20 hours/week", impact: 18 },
+                        { factor: "Low engagement score (3.2)", impact: 12 },
+                        { factor: "Recent manager change", impact: 8 }
+                    ],
+                    decreasing_risk: [
+                        { factor: "High tenure (5+ years)", impact: -15 },
+                        { factor: "Good performance review", impact: -8 },
+                        { factor: "Competitive salary", impact: -5 }
+                    ]
+                },
+                features: {
+                    "Tenure (years)": "5.2",
+                    "Time since promotion (months)": "38",
+                    "Overtime hours/week": "22",
+                    "Engagement score": "3.2",
+                    "Performance rating": "4.1",
+                    "Salary ratio to market": "0.95",
+                    "Manager tenure (months)": "4",
+                    "Work-life balance score": "3.5",
+                    "Team size": "8",
+                    "Remote work days/week": "0"
+                }
+            }
+        };
+
+        // Routing
+        function handleRoute() {
+            const hash = window.location.hash || '#dashboard';
+            const page = hash.replace('#', '');
+            
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            
+            // Show current page
+            const pageEl = document.getElementById(page);
+            if (pageEl) {
+                pageEl.classList.add('active');
+            }
+            
+            // Update nav
+            const navLink = document.querySelector(`.nav-link[data-page="${page}"]`);
+            if (navLink) {
+                navLink.classList.add('active');
+            }
+
+            // Initialize page-specific content
+            if (page === 'dashboard') {
+                await initDashboard();
+            } else if (page === 'fairness') {
+                await initFairness();
+            } else if (page.startsWith('employee')) {
+                await initEmployee();
+            }
+        }
+
+        window.addEventListener('hashchange', () => handleRoute());
+
+        // Dashboard
+        async function initDashboard() {
+            // Fetch data from API or use fallback
+            let stats = cachedData.stats || mockData.stats;
+            let employeesData = cachedData.employees;
+            let riskDist = cachedData.riskDistribution;
+
+            const [statsData, employeesRes, riskRes] = await Promise.all([
+                fetchAPI('/api/stats'),
+                fetchAPI('/api/employees'),
+                fetchAPI('/api/risk-distribution')
+            ]);
+
+            if (statsData) {
+                stats = statsData;
+                cachedData.stats = stats;
+            }
+            if (employeesRes) {
+                employeesData = employeesRes.employees;
+                cachedData.employees = employeesData;
+            }
+            if (riskRes) {
+                riskDist = riskRes.distribution.map(d => d.count);
+                cachedData.riskDistribution = riskDist;
+            }
+
+            // Use fallback if API failed
+            if (!employeesData) employeesData = mockData.employees;
+            if (!riskDist) riskDist = mockData.risk_distribution;
+
+            // Update stats
+            document.getElementById('stat-total').textContent = stats.total_employees.toLocaleString();
+            document.getElementById('stat-avg-risk').textContent = stats.avg_risk + '%';
+            document.getElementById('stat-high-risk').textContent = stats.high_risk_count;
+            document.getElementById('stat-accuracy').textContent = stats.accuracy + '%';
+
+            // Risk color coding
+            const avgRiskEl = document.getElementById('stat-avg-risk');
+            avgRiskEl.className = 'stat-value ' + getRiskClass(stats.avg_risk);
+
+            // Populate high risk table
+            const tbody = document.getElementById('high-risk-table');
+            tbody.innerHTML = employeesData.map(emp => `
+                <tr onclick="window.location.hash='#employee-${emp.id}'">
+                    <td class="employee-id">${emp.id}</td>
+                    <td><span class="department-badge">${emp.department}</span></td>
+                    <td>
+                        <div class="risk-bar-container">
+                            <div class="risk-bar">
+                                <div class="risk-bar-fill ${getRiskClass(emp.risk_score)}" style="width: ${emp.risk_score}%"></div>
+                            </div>
+                            <span class="risk-value ${getRiskClass(emp.risk_score)}">${emp.risk_score}%</span>
+                        </div>
+                    </td>
+                    <td class="top-factor">${emp.top_factor}</td>
+                    <td class="action-arrow">&#8594;</td>
+                </tr>
+            `).join('');
+
+            // Risk Distribution Chart
+            initRiskChart();
+        }
+
+        function getRiskClass(score) {
+            if (score <= 30) return 'low';
+            if (score <= 70) return 'medium';
+            return 'high';
+        }
+
+        let riskChart = null;
+        async function initRiskChart() {
+            const ctx = document.getElementById('riskChart');
+            if (!ctx) return;
+
+            if (riskChart) {
+                riskChart.destroy();
+            }
+
+            // Fetch risk distribution from API
+            let riskDist = cachedData.riskDistribution;
+            const riskRes = await fetchAPI('/api/risk-distribution');
+            if (riskRes) {
+                riskDist = riskRes.distribution.map(d => d.count);
+                cachedData.riskDistribution = riskDist;
+            }
+            if (!riskDist) riskDist = mockData.risk_distribution;
+
+            const labels = ['0-14%', '15-29%', '30-44%', '45-59%', '60-74%', '75-89%', '90-100%'];
+            
+            riskChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Employees',
+                        data: riskDist,
+                        backgroundColor: [
+                            '#16a34a', '#16a34a', '#16a34a',
+                            '#d97706', '#d97706',
+                            '#dc2626', '#dc2626'
+                        ],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Employees'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Risk Score Range'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Employee Detail
+        async function initEmployee() {
+            const hash = window.location.hash;
+            const empId = hash.includes('-') ? hash.split('-')[1] : '2847';
+            const empIdStr = 'EMP-' + empId;
+
+            // Try to fetch from API first
+            let emp = null;
+            const empRes = await fetchAPI('/api/employees/' + empId);
+            if (empRes) {
+                emp = empRes;
+                cachedData['employee_' + empIdStr] = emp;
+            }
+
+            // Fallback to cached or mock
+            if (!emp) emp = cachedData['employee_' + empIdStr] || employeeDetail[empIdStr] || employeeDetail["EMP-2847"];
+
+            // Update gauge
+            const riskClass = getRiskClass(emp.risk_score);
+            const gaugeFill = document.getElementById('gauge-fill');
+            const gaugeValue = document.getElementById('gauge-value');
+            
+            gaugeFill.className = `gauge-fill ${riskClass}`;
+            const circumference = 502;
+            const offset = circumference - (emp.risk_score / 100) * circumference;
+            gaugeFill.style.strokeDashoffset = offset;
+            
+            gaugeValue.textContent = emp.risk_score + '%';
+            gaugeValue.className = `gauge-value risk-${riskClass}`;
+
+            // Prediction label
+            const predLabel = document.getElementById('prediction-label');
+            predLabel.className = `prediction-label ${riskClass}`;
+            predLabel.textContent = emp.prediction.replace('_', ' ');
+
+            // Employee info
+            document.getElementById('emp-id').textContent = emp.id;
+            document.getElementById('emp-dept').textContent = emp.department;
+
+            // SHAP explanations (handle both API and mock format)
+            const shapData = emp.shap_explanation || emp.shap;
+            renderShapFactors('shap-increasing', shapData.increasing_risk, 'increase');
+            renderShapFactors('shap-decreasing', shapData.decreasing_risk, 'decrease');
+
+            // Features table
+            const featuresBody = document.getElementById('features-table-body');
+            featuresBody.innerHTML = Object.entries(emp.features).map(([key, value]) => `
+                <tr>
+                    <td>${key}</td>
+                    <td>${value}</td>
+                </tr>
+            `).join('');
+
+            // Features toggle
+            document.getElementById('features-toggle').addEventListener('click', function() {
+                const content = document.getElementById('features-content');
+                content.classList.toggle('open');
+                this.innerHTML = content.classList.contains('open') 
+                    ? 'Hide Details <span>&#9650;</span>' 
+                    : 'Show Details <span>&#9660;</span>';
+            });
+        }
+
+        function renderShapFactors(containerId, factors, direction) {
+            const container = document.getElementById(containerId);
+            const maxImpact = Math.max(...factors.map(f => Math.abs(f.impact)));
+            
+            container.innerHTML = factors.map(f => {
+                const barWidth = (Math.abs(f.impact) / maxImpact) * 50;
+                return `
+                    <div class="shap-factor">
+                        <span class="shap-factor-label">${f.factor}</span>
+                        <div class="shap-factor-bar">
+                            <div class="shap-factor-bar-fill ${direction}" style="width: ${barWidth}%"></div>
+                        </div>
+                        <span class="shap-factor-value ${direction === 'increase' ? 'positive' : 'negative'}">
+                            ${f.impact > 0 ? '+' : ''}${f.impact}%
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Fairness
+        let fairnessChart = null;
+        async function initFairness() {
+            // Try to fetch fairness data from API
+            const fairnessRes = await fetchAPI('/api/fairness');
+            if (fairnessRes) {
+                cachedData.fairness = {
+                    gender: { ...fairnessRes.gender, metrics: mockData.fairness.gender.metrics },
+                    ethnicity: { ...fairnessRes.ethnicity, metrics: mockData.fairness.ethnicity.metrics },
+                    age: { ...fairnessRes.age, metrics: mockData.fairness.age.metrics },
+                    marital_status: { ...fairnessRes.marital_status, metrics: mockData.fairness.marital_status.metrics }
+                };
+            }
+
+            // Card click handlers
+            document.querySelectorAll('.fairness-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    document.querySelectorAll('.fairness-card').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const attribute = this.dataset.attribute;
+                    updateFairnessDetail(attribute);
+                });
+            });
+
+            // Initial detail view
+            updateFairnessDetail('gender');
+            initFairnessChart();
+        }
+
+        function updateFairnessDetail(attribute) {
+            const data = (cachedData.fairness || mockData.fairness)[attribute];
+            const detail = document.getElementById('fairness-detail');
+            
+            const titles = {
+                gender: 'Gender Analysis',
+                ethnicity: 'Ethnicity Analysis',
+                age: 'Age Group Analysis',
+                marital_status: 'Marital Status Analysis'
+            };
+
+            detail.querySelector('.fairness-detail-title').textContent = titles[attribute];
+            
+            // Metrics table
+            const metricsBody = document.getElementById('metrics-body');
+            metricsBody.innerHTML = data.metrics.map(m => `
+                <tr>
+                    <td>${m.group}</td>
+                    <td>${m.precision}%</td>
+                    <td>${m.recall}%</td>
+                    <td>${m.f1}%</td>
+                    <td>${m.sample}</td>
+                </tr>
+            `).join('');
+
+            // Disparate impact
+            const diValue = document.getElementById('di-value');
+            const diStatus = document.getElementById('di-status');
+            diValue.textContent = data.disparate_impact.toFixed(2);
+            
+            const status = data.status;
+            diStatus.className = `disparate-impact-status ${status}`;
+            diStatus.textContent = status === 'pass' ? 'Pass' : status === 'warning' ? 'Warning' : 'Fail';
+
+            // Update chart
+            updateFairnessChart(attribute);
+        }
+
+        function initFairnessChart() {
+            const ctx = document.getElementById('fairnessChart');
+            if (!ctx) return;
+
+            if (fairnessChart) {
+                fairnessChart.destroy();
+            }
+
+            fairnessChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Precision',
+                            data: [],
+                            backgroundColor: '#0d9488'
+                        },
+                        {
+                            label: 'Recall',
+                            data: [],
+                            backgroundColor: '#1e3a5f'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Percentage (%)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateFairnessChart(attribute) {
+            const data = mockData.fairness[attribute];
+            if (!fairnessChart || !data) return;
+
+            fairnessChart.data.labels = data.metrics.map(m => m.group);
+            fairnessChart.data.datasets[0].data = data.metrics.map(m => 
+                typeof m.precision === 'number' ? m.precision : 0
+            );
+            fairnessChart.data.datasets[1].data = data.metrics.map(m => 
+                typeof m.recall === 'number' ? m.recall : 0
+            );
+            fairnessChart.update();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', handleRoute);
+    </script>
+</body>
+</html>
